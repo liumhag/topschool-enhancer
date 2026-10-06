@@ -1,0 +1,25 @@
+"""No network or children's photos: meaningful ZIP compatibility and URL checks."""
+import pathlib, subprocess, tempfile, zipfile
+root = pathlib.Path(__file__).resolve().parents[1]
+with tempfile.TemporaryDirectory() as temp:
+    target = pathlib.Path(temp) / 'test.zip'
+    script = '''
+const fs=require('node:fs');require('./core.js');require('./zip.js');
+const assert=require('node:assert/strict');
+const u=TS.page('https://winnerpreschool.topschool.tw/Activity/School-Album-Detail?albumId=1&pageIndex=8&CategoryId=9',2);
+assert.equal(TS.index(u),2);assert.equal(new URL(u).searchParams.get('CategoryId'),'9');
+assert.equal([...new URL(u).searchParams].filter(([k])=>k.toLowerCase()==='pageindex').length,1);
+assert.throws(()=>TS.allowed('https://evil.example/Activity/School-Albums'));
+assert.throws(()=>TS.allowed('https://winnerpreschool.topschool.tw/Home/Main'));
+assert.throws(()=>TS.allowed('https://evil.example/a.jpg',true));
+assert.equal(TS.name('a/b:*'),'a_b__');
+makeZip([{name:'照片_001.jpg',data:new Uint8Array([0,1,2,255])},{name:'empty.txt',data:new Uint8Array()}]).arrayBuffer().then(b=>fs.writeFileSync(process.argv[1],Buffer.from(b)));
+'''
+    subprocess.run(['node', '-e', script, str(target)], cwd=root, check=True)
+    with zipfile.ZipFile(target) as archive:
+        assert archive.testzip() is None
+        assert archive.read('照片_001.jpg') == bytes([0, 1, 2, 255])
+        assert archive.read('empty.txt') == b''
+for path in root.glob('*.js'):
+    subprocess.run(['node', '--check', str(path)], check=True)
+print('PASS: JavaScript syntax, URL constraints, UTF-8 ZIP filenames and CRC')
