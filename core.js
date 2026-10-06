@@ -6,8 +6,16 @@ globalThis.TS = (() => {
  function max(doc,value){const u=allowed(value);return Math.max(index(value),1,...[...doc.querySelectorAll('.pagination a[href]')].map(a=>{try{const v=allowed(new URL(a.getAttribute('href'),u));return v.pathname===u.pathname&&v.searchParams.get('albumId')===u.searchParams.get('albumId')?index(v):1;}catch{return 1;}}));}
  function albums(doc){return [...doc.querySelectorAll('#freebrick2 .brick2')].map(c=>{const a=c.querySelector('a[href*="albumId"]');if(!a)return null;const u=allowed(a.getAttribute('href'));return {id:u.searchParams.get('albumId'),url:page(u,1),name:c.querySelector('.info')?.textContent.trim()||'未命名相簿'};}).filter(Boolean);}
  function photos(doc){return [...doc.querySelectorAll('#freebrick4 a.photo-gallery[href]')].map(a=>({url:allowed(a.getAttribute('href'),true).href,name:a.getAttribute('title')||'照片'}));}
- function name(s){return s.replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').replace(/[. ]+$/,'').slice(0,120)||'未命名';}
+ const replacements={'<':'＜','>':'＞',':':'：','"':'＂','/':'／','\\':'＼','|':'｜','?':'？','*':'＊'};
+ const reserved=/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
+ function name(value){
+  let result=String(value??'').replace(/[<>:"/\\|?*]/g,char=>replacements[char]).replace(/[\x00-\x1f\x7f]/g,'').trim();
+  result=result.replace(/[. ]+$/g,match=>'．'.repeat(match.length)).slice(0,120);
+  if(reserved.test(result))result='＿'+result;
+  return result||'未命名';
+ }
+ function path(value){return String(value??'').split(/[\\/]+/).map(x=>x.trim()).filter(x=>x&&x!=='.'&&x!=='..').map(name).join('/').slice(0,100).replace(/\/+$/,'');}
  async function get(value,signal,image=false){const u=allowed(value,image);for(let i=0;i<3;i++){try{const r=await fetch(u,{credentials:image?'omit':'include',signal,redirect:'error'});if(!r.ok)throw Error('HTTP '+r.status);return r;}catch(e){if(signal?.aborted||i===2)throw e;}}}
  async function doc(value,signal){return new DOMParser().parseFromString(await(await get(value,signal)).text(),'text/html');}
- return {origin,allowed,page,index,max,albums,photos,name,get,doc};
+ return {origin,allowed,page,index,max,albums,photos,name,path,get,doc};
 })();
