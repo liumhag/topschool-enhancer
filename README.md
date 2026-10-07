@@ -1,4 +1,4 @@
-# TopSchool Album Enhancer v20261007.0.2.8
+# TopSchool Album Enhancer v20261007.0.2.9
 
 維妮爾國際幼兒園 TopSchool 相簿用 Chrome 外掛。Windows / Mac 桌面 Chrome 適用，不需上架、不需 npm 安裝。
 
@@ -16,6 +16,8 @@
 - 日期統一使用民國年並補零，例如 `2026.8.8` → `1150808`，`2026 07` → `11507`，`115.3.17` 或 `115.0317` → `1150317`。只有年月時保留民國年月，例如 `2025.12` → `11412`，不虛構日期。
 - 以目前資料夾內實際存在的 ZIP 判斷是否已下載；索引檔 `topschool-album-downloads.json` 保存相簿 ID、ZIP 檔名、照片數量與時間。
 - 外掛更新、重裝或本機紀錄清除後，重新選擇原資料夾仍可由索引及 ZIP 恢復已下載狀態。
+- 一般「掃描相簿列表」只掃描網站外層列表，並以保存的相簿 ID 紀錄快速標示已下載狀態，不要求資料夾權限或逐本計算照片。
+- 「完整掃描比對」才會核對 JSON、本機 ZIP、ZIP 檔案數與網站實際照片數，適合在手動移動或刪除 ZIP 後使用。
 - 判斷已下載時會讀取 ZIP 內檔案數，並掃描網站相簿的實際照片數；只有兩者一致才標示「已下載」，不一致會顯示「不完整」並保持勾選。
 - 逐本處理、失敗重試三次、停止按鈕、明確錯誤，不將不完整相簿標示為完成。
 
@@ -28,7 +30,7 @@
 6. 進入一本相簿，確認照片接續、點照片可放大。
 7. 按右下角「下載這本相簿」，在新分頁按「選擇資料夾」，並依 Chrome 提示授權存取。
 8. 檢查所選資料夾內的 ZIP 能解壓、張數正確，照片解析度與網站點開的大圖相同。
-9. 返回列表測試掃描全部、取消全選、只勾兩本下載。
+9. 返回列表按「掃描相簿列表」，確認已下載狀態可由紀錄快速恢復；需要核對實際檔案時再按「完整掃描比對」。
 
 公司管理的 Chrome 可能禁止開發人員模式；遇到此限制請在個人電腦測試。
 Chrome 工具列圖示也可開啟下載器，但需要目前分頁位於支援的相簿路徑。
@@ -54,7 +56,7 @@ Chrome 工具列圖示也可開啟下載器，但需要目前分頁位於支援�
 最容易的方法是安裝官方 GitHub Desktop，在 GitHub 帳號登入後：
 1. File → New repository，名稱 topschool-album-enhancer，放在固定專案路徑。
 2. 把本包資料夾內的程式檔复制到新 repository，確認根目錄直接有 manifest.json。
-3. Commit to main，訊息 `Update TopSchool Album Enhancer v20261007.0.2.8`。
+3. Commit to main，訊息 `Update TopSchool Album Enhancer v20261007.0.2.9`。
 4. Publish repository；取消「Keep this code private」會公開，所以務必保持勾選。
 5. Windows Chrome 載入這個 repository 資料夾作為外掛。
 6. 家中 Mac 用 GitHub Desktop → Clone repository，選這個 private repo；Chrome 載入 Mac clone 的資料夾。

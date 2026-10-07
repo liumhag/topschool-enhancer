@@ -2,8 +2,8 @@
 import json, pathlib, subprocess, tempfile, zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
-assert manifest['version'] == '0.2.8'
-assert manifest['version_name'] == '20261007.0.2.8'
+assert manifest['version'] == '0.2.9'
+assert manifest['version_name'] == '20261007.0.2.9'
 assert manifest['permissions'] == ['storage']
 download_html = (root / 'download.html').read_text(encoding='utf-8')
 download_js = (root / 'download.js').read_text(encoding='utf-8')
@@ -12,8 +12,12 @@ content_css = (root / 'content.css').read_text(encoding='utf-8')
 assert all(f'id="{item}"' in download_html for item in ('choose-directory', 'directory-name', 'refresh-directory', 'version'))
 assert 'id="path-label"' not in download_html
 assert '設定下載至本機資料夾' in download_html
+assert '完整掃描比對' in download_html
 assert 'Chrome 只提供資料夾名稱' not in download_html
 assert "const INDEX_FILE='topschool-album-downloads.json'" in download_js
+assert "history=saved.downloadedAlbums&&typeof saved.downloadedAlbums==='object'?saved.downloadedAlbums:{}" in download_js
+assert 'await scanAlbumList(controller.signal);render();' in download_js
+assert 'if(!albums.length&&new URL(source).pathname.endsWith' in download_js
 assert 'location.replace(TS.page(source,1))' in content_js
 assert "document.querySelectorAll('.pagination').forEach(x=>x.remove())" in content_js
 assert '.pagination{display:none!important}' in content_css

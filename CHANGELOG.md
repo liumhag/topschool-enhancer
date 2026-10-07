@@ -1,4 +1,11 @@
 # Changelog
+## 20261007.0.2.9 — 2026-10-07
+- Use saved album IDs to restore downloaded status during the normal album-list scan.
+- Remove folder authorization, ZIP inspection and per-album photo counting from the normal scan.
+- Add a separate full verification action for comparing JSON records, local ZIP files and website photo counts.
+- Reuse the remembered directory handle when confirming permission instead of reopening the folder picker.
+- Change the folder button label according to whether the folder must be selected, authorized or changed.
+
 ## 20261007.0.2.8 — 2026-10-07
 - Convert space-separated Gregorian years and months in album names to ROC calendar format.
 - Rename the folder setting section and add a concise authorization notice.

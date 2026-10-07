@@ -37,6 +37,7 @@ async function loadDirectory(){
 function updateDirectoryDisplay(){
  const labels={granted:'已授權',prompt:'需要確認',denied:'未授權',unknown:'狀態未知'};
  $('directory-name').textContent=directoryHandle?`${directoryHandle.name}（${labels[directoryPermission]}）`:'尚未選擇';
+ $('choose-directory').textContent=!directoryHandle?'選擇資料夾':directoryPermission==='granted'?'更換資料夾':directoryPermission==='prompt'?'確認資料夾權限':'重新選擇資料夾';
 }
 async function chooseDirectory(){
  if(!window.showDirectoryPicker)throw Error('這個 Chrome 版本不支援選擇任意資料夾，請先更新 Chrome。');
@@ -54,6 +55,16 @@ async function ensureDirectory(){
  if(await directoryHandle.requestPermission(options)==='granted'){directoryPermission='granted';updateDirectoryDisplay();return directoryHandle;}
  directoryPermission='denied';updateDirectoryDisplay();
  throw Error('未取得資料夾寫入權限，請重新選擇下載資料夾。');
+}
+async function authorizeOrChooseDirectory(){
+ if(!directoryHandle)return chooseDirectory();
+ if(directoryPermission==='granted')return chooseDirectory();
+ if(directoryPermission==='denied')return chooseDirectory();
+ const permission=await directoryHandle.requestPermission({mode:'readwrite'});
+ directoryPermission=permission;updateDirectoryDisplay();
+ if(permission!=='granted')throw Error('未取得資料夾寫入權限。');
+ await syncDirectory();
+ return directoryHandle;
 }
 async function readIndex(){
  try{
@@ -122,6 +133,7 @@ async function verifyExistingAlbums(signal){
 async function loadSettings(){
  const saved=await storageGet(['skipDownloaded','downloadedAlbums']);
  $('skip-downloaded').checked=saved.skipDownloaded!==false;
+ history=saved.downloadedAlbums&&typeof saved.downloadedAlbums==='object'?saved.downloadedAlbums:{};
  await storageRemove('directoryLabel');
  await loadDirectory();
 }
@@ -144,21 +156,22 @@ function render(){
  });
  $('start').disabled=running||!albums.length;
 }
-async function scan(){
- try{await ensureDirectory();await syncDirectory();}catch(error){if(error.name!=='AbortError')status(error.message);return;}
- lock(true);controller=new AbortController();
- try{
-  albums=[];const seen=new Set();let last=1;
+async function scanAlbumList(signal){
+ albums=[];const seen=new Set();let last=1;
   for(let page=1;page<=last;page++){
    status(`掃描相簿列表 ${page} / ${last}`);
-   const url=TS.page(source,page),doc=await TS.doc(url,controller.signal);
+   const url=TS.page(source,page),doc=await TS.doc(url,signal);
    if(!doc.querySelector('#freebrick2'))throw Error('找不到相簿列表');
    last=Math.max(last,TS.max(doc,url));if(last>2000)throw Error('分頁數異常');
    for(const album of TS.albums(doc))if(!seen.has(album.id)){seen.add(album.id);albums.push(album);}
   }
-  inferExistingAlbums();await verifyExistingAlbums(controller.signal);await writeIndex();await storageSet({downloadedAlbums:history});render();
+}
+async function scan(){
+ lock(true);controller=new AbortController();
+ try{
+  await scanAlbumList(controller.signal);render();
   const downloaded=albums.filter(album=>history[albumKey(album)]?.verified).length;
-  status(`找到 ${albums.length} 本相簿，目前資料夾內有 ${downloaded} 本已下載`);
+  status(`找到 ${albums.length} 本相簿；依下載紀錄標示 ${downloaded} 本已下載。需要核對 ZIP 與照片張數時，請按「完整掃描比對」。`);
  }catch(error){albums=[];status('掃描停止：'+error.message+'；請重新掃描。');render();}
  finally{lock(false);$('start').disabled=!albums.length;}
 }
@@ -167,10 +180,16 @@ $('scan').onclick=scan;
 $('all').onclick=()=>document.querySelectorAll('#list input').forEach(input=>input.checked=true);
 $('none').onclick=()=>document.querySelectorAll('#list input').forEach(input=>input.checked=false);
 $('cancel').onclick=()=>controller?.abort();
-$('choose-directory').onclick=async()=>{try{await chooseDirectory();status(`下載位置已設為「${directoryHandle.name}」`);}catch(error){if(error.name!=='AbortError')status(error.message);}};
+$('choose-directory').onclick=async()=>{try{await authorizeOrChooseDirectory();status(`下載位置已設為「${directoryHandle.name}」`);}catch(error){if(error.name!=='AbortError')status(error.message);}};
 $('refresh-directory').onclick=async()=>{
  controller=new AbortController();lock(true);
- try{await ensureDirectory();await syncDirectory();await verifyExistingAlbums(controller.signal);await writeIndex();render();status(`已重新掃描「${directoryHandle.name}」內的 ZIP 與照片張數。`);}
+ try{
+  await ensureDirectory();
+  if(!albums.length&&new URL(source).pathname.endsWith('School-Albums'))await scanAlbumList(controller.signal);
+  await syncDirectory();await verifyExistingAlbums(controller.signal);await writeIndex();await storageSet({downloadedAlbums:history});render();
+  const downloaded=albums.filter(album=>history[albumKey(album)]?.verified).length;
+  status(`完整比對完成：${albums.length} 本相簿中有 ${downloaded} 本 ZIP 與網站照片張數一致。`);
+ }
  catch(error){if(error.name!=='AbortError')status(error.message);}
  finally{lock(false);}
 };
@@ -238,8 +257,7 @@ $('start').onclick=async()=>{
   try{
    const doc=await TS.doc(TS.page(source,1)),url=new URL(source);
    albums=[{id:url.searchParams.get('albumId'),url:TS.page(source,1),name:doc.querySelector('h2')?.textContent.replace(/^相簿名稱\s*[:：]\s*/,'').trim()||'相簿'}];
-   if(directoryHandle&&await directoryHandle.queryPermission({mode:'readwrite'})==='granted'){await syncDirectory();controller=new AbortController();await verifyExistingAlbums(controller.signal);}
-   render();status(history[albumKey(albums[0])]?.verified?'目前資料夾已有完整相簿，仍可勾選後重新下載。':'目前相簿已就緒，請確認下載資料夾。');
+   render();status(history[albumKey(albums[0])]?.verified?'目前下載紀錄顯示此相簿已完成；需要核對實際 ZIP 時，請按「完整掃描比對」。':'目前相簿已就緒，請確認下載資料夾。');
   }catch(error){status(error.message);}
- }else status('請先選擇下載資料夾，再掃描完整相簿列表。');
+ }else status('請按「掃描相簿列表」；此快速掃描會直接使用已保存的下載紀錄。');
 })();
