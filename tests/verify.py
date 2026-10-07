@@ -2,8 +2,8 @@
 import json, pathlib, subprocess, tempfile, zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
-assert manifest['version'] == '0.2.2'
-assert manifest['version_name'] == '20261007.0.2.2'
+assert manifest['version'] == '0.2.3'
+assert manifest['version_name'] == '20261007.0.2.3'
 assert manifest['permissions'] == ['storage']
 download_html = (root / 'download.html').read_text(encoding='utf-8')
 download_js = (root / 'download.js').read_text(encoding='utf-8')
@@ -20,11 +20,16 @@ assert.equal([...new URL(u).searchParams].filter(([k])=>k.toLowerCase()==='pagei
 assert.throws(()=>TS.allowed('https://evil.example/Activity/School-Albums'));
 assert.throws(()=>TS.allowed('https://winnerpreschool.topschool.tw/Home/Main'));
 assert.throws(()=>TS.allowed('https://evil.example/a.jpg',true));
-assert.equal(TS.name('a/b:*'),'a／b：＊');
+assert.equal(TS.name('a/b:*'),'a-b');
+assert.equal(TS.name('豐收啦~'),'豐收啦');
+assert.equal(TS.name('115.0317世界水資源日'),'1150317世界水資源日');
+assert.equal(TS.name('12、1月學習區'),'12-1月學習區');
 assert.equal(TS.name('CON'),'＿CON');
-assert.equal(TS.name('相簿. '),'相簿．');
-assert.equal(TS.path('../TopSchool/2026:秋季'),'TopSchool/2026：秋季');
-makeZip([{name:'照片_001.jpg',data:new Uint8Array([0,1,2,255])},{name:'empty.txt',data:new Uint8Array()}]).arrayBuffer().then(b=>fs.writeFileSync(process.argv[1],Buffer.from(b)));
+assert.equal(TS.name('相簿. '),'相簿');
+assert.equal(TS.path('../TopSchool/2026:秋季'),'TopSchool/2026-秋季');
+assert.equal(TS.key('12、1月學習區.zip'),TS.key('12-1月學習區.zip'));
+const zip=makeZip([{name:'照片_001.jpg',data:new Uint8Array([0,1,2,255])},{name:'empty.txt',data:new Uint8Array()}]);
+Promise.all([TS.zipCount(zip),zip.arrayBuffer()]).then(([count,b])=>{assert.equal(count,2);fs.writeFileSync(process.argv[1],Buffer.from(b));});
 '''
     subprocess.run(['node', '-e', script, str(target)], cwd=root, check=True)
     with zipfile.ZipFile(target) as archive:

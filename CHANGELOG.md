@@ -1,4 +1,12 @@
 # Changelog
+## 20261007.0.2.3 — 2026-10-07
+- Remove `~` from generated filenames.
+- Remove periods between date digits and replace `、` with `-`.
+- Replace other invalid filename separators with readable hyphens or remove them.
+- Match older ZIP filenames using punctuation-insensitive normalized album names.
+- Compare the number of files in each ZIP with the current website album photo count.
+- Mark mismatched ZIP files as incomplete and keep those albums selected for download.
+
 ## 20261007.0.2.2 — 2026-10-07
 - Determine downloaded albums from ZIP files that actually exist in the selected folder.
 - Add `topschool-album-downloads.json` to preserve album IDs and download details across extension updates or reinstalls.
