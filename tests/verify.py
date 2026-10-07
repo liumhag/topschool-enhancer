@@ -1,6 +1,10 @@
 """No network or children's photos: meaningful ZIP compatibility and URL checks."""
-import pathlib, subprocess, tempfile, zipfile
+import json, pathlib, subprocess, tempfile, zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
+manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
+assert manifest['version'] == '0.2.1'
+assert manifest['version_name'] == '20261007.0.2.1'
+assert manifest['permissions'] == ['storage']
 with tempfile.TemporaryDirectory() as temp:
     target = pathlib.Path(temp) / 'test.zip'
     script = '''
