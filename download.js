@@ -1,5 +1,6 @@
 const $=id=>document.getElementById(id);
-let controller,albums=[],running=false,history={},directoryHandle;
+const INDEX_FILE='topschool-album-downloads.json';
+let controller,albums=[],running=false,history={},directoryHandle,pathLabel='',directoryFiles=new Map();
 const source=TS.allowed(new URL(location.href).searchParams.get('source')).href;
 const siteKey=new URL(source).hostname;
 
@@ -7,10 +8,9 @@ function status(message){$('status').textContent=message;}
 function albumKey(album){return `${siteKey}:${album.id}`;}
 function storageGet(keys){return new Promise(resolve=>chrome.storage.local.get(keys,resolve));}
 function storageSet(values){return new Promise(resolve=>chrome.storage.local.set(values,resolve));}
-function storageRemove(keys){return new Promise(resolve=>chrome.storage.local.remove(keys,resolve));}
 function lock(value){
  running=value;
- for(const id of ['scan','all','none','start','clear-history','choose-directory'])$(id).disabled=value;
+ for(const id of ['scan','all','none','start','refresh-directory','choose-directory'])$(id).disabled=value;
  $('cancel').disabled=!value;
  for(const input of document.querySelectorAll('input'))input.disabled=value;
 }
@@ -25,28 +25,24 @@ function openDirectoryDb(){
 }
 async function directoryDb(mode,action){
  const db=await openDirectoryDb();
- try{
-  return await new Promise((resolve,reject)=>{
-   const transaction=db.transaction('settings',mode);
-   const request=action(transaction.objectStore('settings'));
-   request.onsuccess=()=>resolve(request.result);
-   request.onerror=()=>reject(request.error);
-  });
- }finally{db.close();}
+ try{return await new Promise((resolve,reject)=>{const request=action(db.transaction('settings',mode).objectStore('settings'));request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
+ finally{db.close();}
 }
 async function loadDirectory(){
  try{directoryHandle=await directoryDb('readonly',store=>store.get('directory'));}catch{}
- updateDirectoryName();
+ updateDirectoryDisplay();
 }
-function updateDirectoryName(){
+function updateDirectoryDisplay(){
  $('directory-name').textContent=directoryHandle?.name||'尚未選擇';
- $('directory-name').title=directoryHandle?.name||'';
+ $('path-label').value=pathLabel||directoryHandle?.name||'';
 }
 async function chooseDirectory(){
  if(!window.showDirectoryPicker)throw Error('這個 Chrome 版本不支援選擇任意資料夾，請先更新 Chrome。');
  directoryHandle=await window.showDirectoryPicker({id:'topschool-albums',mode:'readwrite'});
+ pathLabel='';history={};directoryFiles=new Map();
  await directoryDb('readwrite',store=>store.put(directoryHandle,'directory'));
- updateDirectoryName();
+ await syncDirectory();
+ updateDirectoryDisplay();
  return directoryHandle;
 }
 async function ensureDirectory(){
@@ -56,38 +52,78 @@ async function ensureDirectory(){
  if(await directoryHandle.requestPermission(options)==='granted')return directoryHandle;
  throw Error('未取得資料夾寫入權限，請重新選擇下載資料夾。');
 }
+async function readIndex(){
+ try{
+  const handle=await directoryHandle.getFileHandle(INDEX_FILE);
+  const data=JSON.parse(await(await handle.getFile()).text());
+  return data&&typeof data==='object'?data:{};
+ }catch(error){if(error.name==='NotFoundError'||error instanceof SyntaxError)return {};throw error;}
+}
+async function writeIndex(){
+ const handle=await directoryHandle.getFileHandle(INDEX_FILE,{create:true});
+ const writable=await handle.createWritable();
+ try{await writable.write(JSON.stringify({formatVersion:1,pathLabel:pathLabel||directoryHandle.name,albums:history},null,2));await writable.close();}
+ catch(error){try{await writable.abort();}catch{}throw error;}
+}
+async function syncDirectory(){
+ directoryFiles=new Map();
+ for await(const [name,handle] of directoryHandle.entries()){
+  if(handle.kind!=='file'||!name.toLowerCase().endsWith('.zip'))continue;
+  const file=await handle.getFile();
+  directoryFiles.set(name,{lastModified:file.lastModified});
+ }
+ const index=await readIndex();
+ pathLabel=String(index.pathLabel||pathLabel||directoryHandle.name);
+ history={};
+ for(const [key,record] of Object.entries(index.albums||{})){
+  if(record&&directoryFiles.has(record.filename))history[key]=record;
+ }
+ inferExistingAlbums();
+ await storageSet({directoryLabel:pathLabel,downloadedAlbums:history});
+ updateDirectoryDisplay();render();
+}
+function escapeRegex(value){return value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+function inferExistingAlbums(){
+ const counts=new Map();
+ for(const album of albums){const safe=TS.name(album.name).toLowerCase();counts.set(safe,(counts.get(safe)||0)+1);}
+ for(const album of albums){
+  const key=albumKey(album);if(history[key])continue;
+  const safe=TS.name(album.name);
+  if(counts.get(safe.toLowerCase())!==1)continue;
+  const pattern=new RegExp(`^${escapeRegex(safe)}(?: \\(\\d+\\))?\\.zip$`,'i');
+  const match=[...directoryFiles.keys()].find(name=>pattern.test(name));
+  if(match){const file=directoryFiles.get(match);history[key]={albumId:album.id,name:album.name,photoCount:null,completedAt:new Date(file.lastModified).toISOString(),filename:match,inferred:true};}
+ }
+}
 
 async function loadSettings(){
- const saved=await storageGet(['skipDownloaded','downloadedAlbums']);
+ const saved=await storageGet(['skipDownloaded','downloadedAlbums','directoryLabel']);
  $('skip-downloaded').checked=saved.skipDownloaded!==false;
- history=saved.downloadedAlbums??{};
+ pathLabel=saved.directoryLabel||'';
  await loadDirectory();
 }
-async function saveSettings(){await storageSet({skipDownloaded:$('skip-downloaded').checked});}
+async function saveSettings(){await storageSet({skipDownloaded:$('skip-downloaded').checked,directoryLabel:pathLabel});}
 function formatDate(iso){try{return new Intl.DateTimeFormat('zh-TW',{dateStyle:'short',timeStyle:'short'}).format(new Date(iso));}catch{return iso;}}
 function render(){
  $('list').replaceChildren();
  const skip=$('skip-downloaded').checked;
  albums.forEach((album,index)=>{
-  const label=document.createElement('label');
-  const box=document.createElement('input');
-  const title=document.createElement('span');
+  const label=document.createElement('label'),box=document.createElement('input'),title=document.createElement('span');
   const record=history[albumKey(album)];
   box.type='checkbox';box.value=index;box.checked=!(skip&&record);
-  title.className='album-name';title.textContent=album.name;
-  label.append(box,title);
+  title.className='album-name';title.textContent=album.name;label.append(box,title);
   if(record){
-   const badge=document.createElement('span');
-   badge.className='downloaded';
-   badge.textContent=`已下載 · ${record.photoCount??'?'} 張 · ${formatDate(record.completedAt)}`;
-   badge.title=record.filename??'';
-   label.append(badge);
+   const badge=document.createElement('span');badge.className='downloaded';
+   const count=record.photoCount==null?'張數未知':`${record.photoCount} 張`;
+   badge.textContent=`已下載 · ${count} · ${formatDate(record.completedAt)}`;
+   badge.title=record.filename??'';label.append(badge);
   }
   $('list').append(label);
  });
  $('start').disabled=running||!albums.length;
 }
 async function scan(){
+ try{await ensureDirectory();await syncDirectory();}catch(error){if(error.name!=='AbortError')status(error.message);return;}
  lock(true);controller=new AbortController();
  try{
   albums=[];const seen=new Set();let last=1;
@@ -98,9 +134,9 @@ async function scan(){
    last=Math.max(last,TS.max(doc,url));if(last>2000)throw Error('分頁數異常');
    for(const album of TS.albums(doc))if(!seen.has(album.id)){seen.add(album.id);albums.push(album);}
   }
-  render();
+  inferExistingAlbums();await writeIndex();await storageSet({downloadedAlbums:history});render();
   const downloaded=albums.filter(album=>history[albumKey(album)]).length;
-  status(`找到 ${albums.length} 本相簿，其中 ${downloaded} 本已有下載紀錄`);
+  status(`找到 ${albums.length} 本相簿，目前資料夾內有 ${downloaded} 本已下載`);
  }catch(error){albums=[];status('掃描停止：'+error.message+'；請重新掃描。');render();}
  finally{lock(false);$('start').disabled=!albums.length;}
 }
@@ -109,19 +145,16 @@ $('scan').onclick=scan;
 $('all').onclick=()=>document.querySelectorAll('#list input').forEach(input=>input.checked=true);
 $('none').onclick=()=>document.querySelectorAll('#list input').forEach(input=>input.checked=false);
 $('cancel').onclick=()=>controller?.abort();
-$('choose-directory').onclick=async()=>{
- try{await chooseDirectory();status(`下載位置已設為「${directoryHandle.name}」`);}catch(error){if(error.name!=='AbortError')status(error.message);}
+$('choose-directory').onclick=async()=>{try{await chooseDirectory();status(`下載位置已設為「${pathLabel}」`);}catch(error){if(error.name!=='AbortError')status(error.message);}};
+$('refresh-directory').onclick=async()=>{try{await ensureDirectory();await syncDirectory();await writeIndex();status(`已重新掃描「${pathLabel}」內的 ZIP。`);}catch(error){if(error.name!=='AbortError')status(error.message);}};
+$('path-label').onchange=async()=>{
+ pathLabel=$('path-label').value.trim()||directoryHandle?.name||'';updateDirectoryDisplay();await saveSettings();
+ if(directoryHandle){try{await writeIndex();}catch(error){status('路徑名稱已保存於外掛，但無法寫入資料夾索引：'+error.message);}}
 };
 $('skip-downloaded').onchange=async()=>{await saveSettings();render();};
-$('clear-history').onclick=async()=>{
- await storageRemove('downloadedAlbums');history={};render();
- status('已清除這個外掛的相簿下載紀錄；已存在的 ZIP 不會刪除。');
-};
 
 async function uniqueFileHandle(directory,filename){
- const dot=filename.lastIndexOf('.');
- const base=dot>0?filename.slice(0,dot):filename;
- const extension=dot>0?filename.slice(dot):'';
+ const dot=filename.lastIndexOf('.'),base=dot>0?filename.slice(0,dot):filename,extension=dot>0?filename.slice(dot):'';
  for(let number=0;number<10000;number++){
   const candidate=number?`${base} (${number})${extension}`:filename;
   try{await directory.getFileHandle(candidate);}
@@ -130,21 +163,15 @@ async function uniqueFileHandle(directory,filename){
  throw Error('同名檔案過多，無法建立新的 ZIP。');
 }
 async function save(blob,filename,signal){
- const target=await uniqueFileHandle(directoryHandle,filename);
- const writable=await target.handle.createWritable();
- try{
-  if(signal.aborted)throw Error('已停止');
-  await writable.write(blob);
-  if(signal.aborted)throw Error('已停止');
-  await writable.close();
-  return target.filename;
- }catch(error){try{await writable.abort();}catch{}throw error;}
+ const target=await uniqueFileHandle(directoryHandle,filename),writable=await target.handle.createWritable();
+ try{if(signal.aborted)throw Error('已停止');await writable.write(blob);if(signal.aborted)throw Error('已停止');await writable.close();return target.filename;}
+ catch(error){try{await writable.abort();}catch{}throw error;}
 }
 
 $('start').onclick=async()=>{
  const selected=[...document.querySelectorAll('#list input:checked')].map(input=>albums[Number(input.value)]);
  if(!selected.length){status('請至少選擇一本相簿。');return;}
- try{await ensureDirectory();}catch(error){if(error.name!=='AbortError')status(error.message);return;}
+ try{await ensureDirectory();await syncDirectory();}catch(error){if(error.name!=='AbortError')status(error.message);return;}
  lock(true);controller=new AbortController();const signal=controller.signal;$('log').textContent='';
  try{
   for(const album of selected){
@@ -170,14 +197,13 @@ $('start').onclick=async()=>{
    }
    status(`${album.name} · 建立 ZIP…`);
    const savedName=await save(makeZip(entries),TS.name(album.name)+'.zip',signal);
-   const displayPath=`${directoryHandle.name}/${savedName}`;
-   history[albumKey(album)]={albumId:album.id,name:album.name,photoCount:photos.length,completedAt:new Date().toISOString(),filename:displayPath};
-   await storageSet({downloadedAlbums:history});
-   render();
-   $('log').textContent+=`✓ ${album.name}：${photos.length} 張 → ${displayPath}\n`;
+   history[albumKey(album)]={albumId:album.id,name:album.name,photoCount:photos.length,completedAt:new Date().toISOString(),filename:savedName};
+   directoryFiles.set(savedName,{lastModified:Date.now()});
+   await writeIndex();await storageSet({downloadedAlbums:history});render();
+   $('log').textContent+=`✓ ${album.name}：${photos.length} 張 → ${pathLabel}/${savedName}\n`;
   }
   status('選取相簿下載完成');
- }catch(error){status('下載停止：'+error.message+'；已完成的 ZIP 與紀錄會保留，可重新選取其餘相簿。');}
+ }catch(error){status('下載停止：'+error.message+'；已完成的 ZIP 會保留，可重新掃描資料夾。');}
  finally{lock(false);}
 };
 
@@ -186,11 +212,10 @@ $('start').onclick=async()=>{
  if(new URL(source).pathname.endsWith('School-Album-Detail')){
   $('scan').hidden=true;
   try{
-   const doc=await TS.doc(TS.page(source,1));
-   const url=new URL(source);
+   const doc=await TS.doc(TS.page(source,1)),url=new URL(source);
    albums=[{id:url.searchParams.get('albumId'),url:TS.page(source,1),name:doc.querySelector('h2')?.textContent.replace(/^相簿名稱\s*[:：]\s*/,'').trim()||'相簿'}];
-   render();
-   status(history[albumKey(albums[0])]?'目前相簿已有下載紀錄，仍可勾選後重新下載。':'目前相簿已就緒，下載會掃描全部照片頁。');
+   if(directoryHandle&&await directoryHandle.queryPermission({mode:'readwrite'})==='granted')await syncDirectory();
+   render();status(history[albumKey(albums[0])]?'目前資料夾已有這本相簿，仍可勾選後重新下載。':'目前相簿已就緒，請確認下載資料夾。');
   }catch(error){status(error.message);}
  }else status('請先選擇下載資料夾，再掃描完整相簿列表。');
 })();

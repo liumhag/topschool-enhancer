@@ -1,4 +1,11 @@
 # Changelog
+## 20261007.0.2.2 — 2026-10-07
+- Determine downloaded albums from ZIP files that actually exist in the selected folder.
+- Add `topschool-album-downloads.json` to preserve album IDs and download details across extension updates or reinstalls.
+- Recover older downloads by matching unique sanitized album ZIP filenames.
+- Add a user-defined full path label for display because Chrome does not expose absolute folder paths.
+- Add a button to rescan the selected folder after files are moved or deleted.
+
 ## 20261007.0.2.1 — 2026-10-07
 - Replace the Chrome Downloads subdirectory setting with a system folder picker.
 - Allow ZIP files to be written to a selected folder on another drive, such as `D:\TopSchool`.

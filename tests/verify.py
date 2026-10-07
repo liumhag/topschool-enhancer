@@ -2,9 +2,13 @@
 import json, pathlib, subprocess, tempfile, zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
-assert manifest['version'] == '0.2.1'
-assert manifest['version_name'] == '20261007.0.2.1'
+assert manifest['version'] == '0.2.2'
+assert manifest['version_name'] == '20261007.0.2.2'
 assert manifest['permissions'] == ['storage']
+download_html = (root / 'download.html').read_text(encoding='utf-8')
+download_js = (root / 'download.js').read_text(encoding='utf-8')
+assert all(f'id="{item}"' in download_html for item in ('choose-directory', 'directory-name', 'path-label', 'refresh-directory'))
+assert "const INDEX_FILE='topschool-album-downloads.json'" in download_js
 with tempfile.TemporaryDirectory() as temp:
     target = pathlib.Path(temp) / 'test.zip'
     script = '''
