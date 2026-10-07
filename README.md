@@ -1,4 +1,4 @@
-# TopSchool Album Enhancer v20261007.0.3.0
+# TopSchool Album Enhancer v20261007.0.3.1
 
 TopSchool 相簿用 Chrome 外掛，支援 `*.topschool.tw` 的相簿列表與相簿照片頁。Windows / Mac 桌面 Chrome 適用，不需 npm 安裝。
 
@@ -18,6 +18,8 @@ TopSchool 相簿用 Chrome 外掛，支援 `*.topschool.tw` 的相簿列表與�
 - 外掛更新、重裝或本機紀錄清除後，重新選擇原資料夾仍可由索引及 ZIP 恢復已下載狀態。
 - 一般「掃描網頁相簿列表」只掃描網站外層列表，並以保存的相簿 ID 紀錄快速標示已下載狀態，不要求資料夾權限或逐本計算照片。
 - 「完整掃描比對」才會核對 JSON、本機 ZIP、ZIP 檔案數與網站實際照片數，適合在手動移動或刪除 ZIP 後使用。
+- 相簿列表第一列提供 Gmail 形式的「全選」核取方塊，支援全選、取消全選及部分選取狀態；也可按「選取未下載相簿」只勾選尚未完成的項目。
+- 列表右上角顯示目前學校網域上次完成完整掃描的時間；不同學校的時間分開保存。
 - 判斷已下載時會讀取 ZIP 內檔案數，並掃描網站相簿的實際照片數；只有兩者一致才標示「已下載」，不一致會顯示「不完整」並保持勾選。
 - 逐本處理、失敗重試三次、停止按鈕、明確錯誤，不將不完整相簿標示為完成。
 
@@ -56,7 +58,7 @@ Chrome 工具列圖示也可開啟下載器，但需要目前分頁位於支援�
 最容易的方法是安裝官方 GitHub Desktop，在 GitHub 帳號登入後：
 1. File → New repository，名稱 topschool-album-enhancer，放在固定專案路徑。
 2. 把本包資料夾內的程式檔复制到新 repository，確認根目錄直接有 manifest.json。
-3. Commit to main，訊息 `Update TopSchool Album Enhancer v20261007.0.3.0`。
+3. Commit to main，訊息 `Update TopSchool Album Enhancer v20261007.0.3.1`。
 4. Publish repository；取消「Keep this code private」會公開，所以務必保持勾選。
 5. Windows Chrome 載入這個 repository 資料夾作為外掛。
 6. 家中 Mac 用 GitHub Desktop → Clone repository，選這個 private repo；Chrome 載入 Mac clone 的資料夾。

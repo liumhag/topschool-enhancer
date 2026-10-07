@@ -1,8 +1,9 @@
 const $=id=>document.getElementById(id);
 const INDEX_FILE='topschool-album-downloads.json';
-let controller,albums=[],running=false,history={},directoryHandle,directoryPermission='unknown',directoryFiles=new Map();
+let controller,albums=[],running=false,history={},directoryHandle,directoryPermission='unknown',directoryFiles=new Map(),lastFullScanAt=null,fullScanTimes={};
 const source=TS.allowed(new URL(location.href).searchParams.get('source')).href;
 const siteKey=new URL(source).hostname;
+const detailPage=new URL(source).pathname.endsWith('School-Album-Detail');
 
 function status(message){$('status').textContent=message;}
 function albumKey(album){return `${siteKey}:${album.id}`;}
@@ -11,7 +12,7 @@ function storageSet(values){return new Promise(resolve=>chrome.storage.local.set
 function storageRemove(keys){return new Promise(resolve=>chrome.storage.local.remove(keys,resolve));}
 function lock(value){
  running=value;
- for(const id of ['scan','all','none','start','refresh-directory','choose-directory'])$(id).disabled=value;
+ for(const id of ['scan','select-undownloaded','start','refresh-directory','choose-directory'])$(id).disabled=value;
  $('cancel').disabled=!value;
  for(const input of document.querySelectorAll('input'))input.disabled=value;
 }
@@ -131,21 +132,33 @@ async function verifyExistingAlbums(signal){
 }
 
 async function loadSettings(){
- const saved=await storageGet(['skipDownloaded','downloadedAlbums']);
+ const saved=await storageGet(['skipDownloaded','downloadedAlbums','fullScanTimes']);
  $('skip-downloaded').checked=saved.skipDownloaded!==false;
  history=saved.downloadedAlbums&&typeof saved.downloadedAlbums==='object'?saved.downloadedAlbums:{};
+ fullScanTimes=saved.fullScanTimes&&typeof saved.fullScanTimes==='object'?saved.fullScanTimes:{};lastFullScanAt=fullScanTimes[siteKey]||null;
  await storageRemove('directoryLabel');
  await loadDirectory();
 }
 async function saveSettings(){await storageSet({skipDownloaded:$('skip-downloaded').checked});}
 function formatDate(iso){try{return new Intl.DateTimeFormat('zh-TW',{dateStyle:'short',timeStyle:'short'}).format(new Date(iso));}catch{return iso;}}
+function updateSelectAll(){
+ const selectAll=$('select-all'),boxes=[...document.querySelectorAll('#list .album-row input')];if(!selectAll)return;
+ const selected=boxes.filter(box=>box.checked).length;selectAll.checked=boxes.length>0&&selected===boxes.length;selectAll.indeterminate=selected>0&&selected<boxes.length;
+}
 function render(){
  $('list').replaceChildren();
  const skip=$('skip-downloaded').checked;
+ if(!detailPage&&albums.length){
+  const header=document.createElement('div'),label=document.createElement('label'),box=document.createElement('input'),text=document.createElement('span'),scanTime=document.createElement('span');
+  header.className='list-header';box.type='checkbox';box.id='select-all';text.textContent='全選';scanTime.className='last-scan';scanTime.textContent=`上次完整掃描：${lastFullScanAt?formatDate(lastFullScanAt):'尚未執行'}`;
+  box.onchange=()=>{document.querySelectorAll('#list .album-row input').forEach(input=>input.checked=box.checked);updateSelectAll();};label.append(box,text);header.append(label,scanTime);$('list').append(header);
+ }
  albums.forEach((album,index)=>{
   const label=document.createElement('label'),box=document.createElement('input'),title=document.createElement('span');
   const record=history[albumKey(album)];
+  label.className='album-row';
   box.type='checkbox';box.value=index;box.checked=!(skip&&record?.verified);
+  box.onchange=updateSelectAll;
   title.className='album-name';title.textContent=album.name;label.append(box,title);
   if(record){
    const badge=document.createElement('span');badge.className=record.verified?'downloaded':'incomplete';
@@ -154,6 +167,7 @@ function render(){
   }
   $('list').append(label);
  });
+ updateSelectAll();
  $('start').disabled=running||!albums.length;
 }
 async function scanAlbumList(signal){
@@ -177,8 +191,7 @@ async function scan(){
 }
 
 $('scan').onclick=scan;
-$('all').onclick=()=>document.querySelectorAll('#list input').forEach(input=>input.checked=true);
-$('none').onclick=()=>document.querySelectorAll('#list input').forEach(input=>input.checked=false);
+$('select-undownloaded').onclick=()=>{document.querySelectorAll('#list .album-row input').forEach(input=>input.checked=!history[albumKey(albums[Number(input.value)])]?.verified);updateSelectAll();};
 $('cancel').onclick=()=>controller?.abort();
 $('choose-directory').onclick=async()=>{try{await authorizeOrChooseDirectory();status(`下載位置已設為「${directoryHandle.name}」`);}catch(error){if(error.name!=='AbortError')status(error.message);}};
 $('refresh-directory').onclick=async()=>{
@@ -186,7 +199,7 @@ $('refresh-directory').onclick=async()=>{
  try{
   await ensureDirectory();
   if(!albums.length&&new URL(source).pathname.endsWith('School-Albums'))await scanAlbumList(controller.signal);
-  await syncDirectory();await verifyExistingAlbums(controller.signal);await writeIndex();await storageSet({downloadedAlbums:history});render();
+  await syncDirectory();await verifyExistingAlbums(controller.signal);await writeIndex();lastFullScanAt=new Date().toISOString();fullScanTimes[siteKey]=lastFullScanAt;await storageSet({downloadedAlbums:history,fullScanTimes});render();
   const downloaded=albums.filter(album=>history[albumKey(album)]?.verified).length;
   status(`完整比對完成：${albums.length} 本相簿中有 ${downloaded} 本 ZIP 與網站照片張數一致。`);
  }
@@ -211,7 +224,7 @@ async function save(blob,filename,signal){
 }
 
 $('start').onclick=async()=>{
- const selected=[...document.querySelectorAll('#list input:checked')].map(input=>albums[Number(input.value)]);
+ const selected=[...document.querySelectorAll('#list .album-row input:checked')].map(input=>albums[Number(input.value)]);
  if(!selected.length){status('請至少選擇一本相簿。');return;}
  try{await ensureDirectory();await syncDirectory();}catch(error){if(error.name!=='AbortError')status(error.message);return;}
  lock(true);controller=new AbortController();const signal=controller.signal;$('log').textContent='';
@@ -252,8 +265,8 @@ $('start').onclick=async()=>{
 (async()=>{
  const manifest=chrome.runtime.getManifest();$('version').textContent=`v${manifest.version_name||manifest.version}`;
  await loadSettings();
- if(new URL(source).pathname.endsWith('School-Album-Detail')){
-  $('scan').hidden=true;
+ if(detailPage){
+  $('scan').hidden=true;$('select-undownloaded').hidden=true;
   try{
    const doc=await TS.doc(TS.page(source,1)),url=new URL(source);
    albums=[{id:url.searchParams.get('albumId'),url:TS.page(source,1),name:doc.querySelector('h2')?.textContent.replace(/^相簿名稱\s*[:：]\s*/,'').trim()||'相簿'}];

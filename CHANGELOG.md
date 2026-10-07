@@ -1,4 +1,11 @@
 # Changelog
+## 20261007.0.3.1 — 2026-10-07
+- Replace the separate select-all and clear-selection buttons with a Gmail-style list header checkbox.
+- Add an indeterminate checkbox state when only some albums are selected.
+- Add a single action for selecting albums not marked as downloaded.
+- Hide batch-selection controls on single-album download pages.
+- Show the most recent full verification time in the list header and store it separately for each school domain.
+
 ## 20261007.0.3.0 — 2026-10-07
 - Extend album browsing and downloading from one school host to supported album paths on all TopSchool subdomains.
 - Keep original-photo access limited to the verified image CDN.
