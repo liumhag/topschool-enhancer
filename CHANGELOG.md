@@ -1,4 +1,10 @@
 # Changelog
+## 20261007.0.2.4 — 2026-10-07
+- Normalize complete Gregorian dates to `yyyymmdd` with zero-padded months and days.
+- Convert complete ROC calendar dates to Gregorian `yyyymmdd`.
+- Keep year-month values as `yyyymm` instead of inventing a missing day.
+- Apply the same date normalization when matching ZIP files created by previous versions.
+
 ## 20261007.0.2.3 — 2026-10-07
 - Remove `~` from generated filenames.
 - Remove periods between date digits and replace `、` with `-`.
