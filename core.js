@@ -14,12 +14,12 @@ globalThis.TS = (() => {
  function yearMonth(match,prefix,year,month,roc=false){const y=Number(year)+(roc?1911:0),m=Number(month),rocYear=y-1911;return rocYear>0&&m>=1&&m<=12?`${prefix}${String(rocYear).padStart(3,'0')}${String(m).padStart(2,'0')}`:match;}
  function dates(value){
   return value
-   .replace(/(^|[^\d])(\d{4})[.\/年-](\d{1,2})[.\/月-](\d{1,2})日?(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4]))
-   .replace(/(^|[^\d])(\d{3})[.\/年-](\d{1,2})[.\/月-](\d{1,2})日?(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4],true))
+   .replace(/(^|[^\d])(\d{4})[.\/年\s-]+(\d{1,2})[.\/月\s-]+(\d{1,2})日?(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4]))
+   .replace(/(^|[^\d])(\d{3})[.\/年\s-]+(\d{1,2})[.\/月\s-]+(\d{1,2})日?(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4],true))
    .replace(/(^|[^\d])(\d{3})\.(\d{2})(\d{2})(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4],true))
    .replace(/(^|[^\d])(\d{4})(\d{2})(\d{2})(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4]))
-   .replace(/(^|[^\d])(\d{4})[.\/年-](\d{1,2})月?(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3]))
-   .replace(/(^|[^\d])(\d{3})[.\/年-](\d{1,2})月?(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3],true))
+   .replace(/(^|[^\d])(\d{4})[.\/年\s-]+(\d{1,2})月?(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3]))
+   .replace(/(^|[^\d])(\d{3})[.\/年\s-]+(\d{1,2})月?(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3],true))
    .replace(/(^|[^\d])(\d{4})(\d{2})(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3]))
    .replace(/(\d)\.(?=\d)/g,'$1');
  }

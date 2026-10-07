@@ -2,8 +2,8 @@
 import json, pathlib, subprocess, tempfile, zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
-assert manifest['version'] == '0.2.7'
-assert manifest['version_name'] == '20261007.0.2.7'
+assert manifest['version'] == '0.2.8'
+assert manifest['version_name'] == '20261007.0.2.8'
 assert manifest['permissions'] == ['storage']
 download_html = (root / 'download.html').read_text(encoding='utf-8')
 download_js = (root / 'download.js').read_text(encoding='utf-8')
@@ -11,6 +11,8 @@ content_js = (root / 'content.js').read_text(encoding='utf-8')
 content_css = (root / 'content.css').read_text(encoding='utf-8')
 assert all(f'id="{item}"' in download_html for item in ('choose-directory', 'directory-name', 'refresh-directory', 'version'))
 assert 'id="path-label"' not in download_html
+assert '設定下載至本機資料夾' in download_html
+assert 'Chrome 只提供資料夾名稱' not in download_html
 assert "const INDEX_FILE='topschool-album-downloads.json'" in download_js
 assert 'location.replace(TS.page(source,1))' in content_js
 assert "document.querySelectorAll('.pagination').forEach(x=>x.remove())" in content_js
@@ -34,6 +36,8 @@ assert.equal(TS.name('20260808活動'),'1150808活動');
 assert.equal(TS.name('115.3.17世界水資源日'),'1150317世界水資源日');
 assert.equal(TS.name('115.0317世界水資源日'),'1150317世界水資源日');
 assert.equal(TS.name('舊鞋旅行2025.12'),'舊鞋旅行11412');
+assert.equal(TS.name('2026 07維妮爾國際幼兒園 看見孩子的舞台'),'11507維妮爾國際幼兒園 看見孩子的舞台');
+assert.equal(TS.name('2026 7 8夏日活動'),'1150708夏日活動');
 assert.equal(TS.name('12、1月學習區'),'12-1月學習區');
 assert.equal(TS.name('CON'),'＿CON');
 assert.equal(TS.name('相簿. '),'相簿');

@@ -1,4 +1,10 @@
 # Changelog
+## 20261007.0.2.8 — 2026-10-07
+- Convert space-separated Gregorian years and months in album names to ROC calendar format.
+- Rename the folder setting section and add a concise authorization notice.
+- Align the folder selection and rescan buttons with matching dimensions.
+- Remove unnecessary full-path limitation text from the downloader page.
+
 ## 20261007.0.2.7 — 2026-10-07
 - Hide the original pagination controls immediately.
 - Redirect later-page album and photo URLs to page 1 while preserving filters and album parameters.
