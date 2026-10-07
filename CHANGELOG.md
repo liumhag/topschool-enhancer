@@ -1,4 +1,10 @@
 # Changelog
+## 20261007.0.2.5 — 2026-10-07
+- Remove the manual full path display field.
+- Show the selected folder name and its current Chrome permission status.
+- Add the public extension version to the top-right corner of the downloader page.
+- Remove obsolete path label data from the folder index and extension settings.
+
 ## 20261007.0.2.4 — 2026-10-07
 - Normalize complete Gregorian dates to `yyyymmdd` with zero-padded months and days.
 - Convert complete ROC calendar dates to Gregorian `yyyymmdd`.
