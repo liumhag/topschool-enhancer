@@ -2,9 +2,11 @@
 import json, pathlib, subprocess, tempfile, zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
-assert manifest['version'] == '0.2.10'
-assert manifest['version_name'] == '20261007.0.2.10'
+assert manifest['version'] == '0.3.0'
+assert manifest['version_name'] == '20261007.0.3.0'
 assert manifest['permissions'] == ['storage']
+assert 'https://*.topschool.tw/*' in manifest['host_permissions']
+assert manifest['icons']['128'] == 'icons/icon128.png'
 download_html = (root / 'download.html').read_text(encoding='utf-8')
 download_js = (root / 'download.js').read_text(encoding='utf-8')
 content_js = (root / 'content.js').read_text(encoding='utf-8')
@@ -29,8 +31,10 @@ const fs=require('node:fs');require('./core.js');require('./zip.js');
 const assert=require('node:assert/strict');
 const u=TS.page('https://winnerpreschool.topschool.tw/Activity/School-Album-Detail?albumId=1&pageIndex=8&CategoryId=9',2);
 assert.equal(TS.index(u),2);assert.equal(new URL(u).searchParams.get('CategoryId'),'9');
+assert.equal(TS.allowed('https://example-school.topschool.tw/Activity/School-Albums').hostname,'example-school.topschool.tw');
 assert.equal([...new URL(u).searchParams].filter(([k])=>k.toLowerCase()==='pageindex').length,1);
 assert.throws(()=>TS.allowed('https://evil.example/Activity/School-Albums'));
+assert.throws(()=>TS.allowed('https://fake-topschool.tw/Activity/School-Albums'));
 assert.throws(()=>TS.allowed('https://winnerpreschool.topschool.tw/Home/Main'));
 assert.throws(()=>TS.allowed('https://evil.example/a.jpg',true));
 assert.equal(TS.name('a/b:*'),'a-b');

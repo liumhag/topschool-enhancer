@@ -1,11 +1,12 @@
 globalThis.TS = (() => {
- const origin='https://winnerpreschool.topschool.tw';
- function allowed(value,image=false){const u=new URL(value,origin);if(u.protocol!=='https:'||u.username||u.password|| (image?u.hostname!=='isai-prod-v2.s3.hicloud.net.tw':u.origin!==origin||!/^\/Activity\/School-(Albums|Album-Detail)$/.test(u.pathname)))throw Error('不允許的網址');return u;}
+ const origin='https://topschool.tw';
+ function school(hostname){return hostname==='topschool.tw'||hostname.endsWith('.topschool.tw');}
+ function allowed(value,image=false,base=origin){const u=new URL(value,base);if(u.protocol!=='https:'||u.username||u.password|| (image?u.hostname!=='isai-prod-v2.s3.hicloud.net.tw':!school(u.hostname)||!/^\/Activity\/School-(Albums|Album-Detail)$/.test(u.pathname)))throw Error('不允許的網址');return u;}
  function page(value,n){const u=allowed(value);for(const k of [...u.searchParams.keys()])if(k.toLowerCase()==='pageindex')u.searchParams.delete(k);u.searchParams.set('PageIndex',n);return u.href;}
  function index(value){const u=allowed(value);return Number([...u.searchParams].find(([k])=>k.toLowerCase()==='pageindex')?.[1]||1);}
  function max(doc,value){const u=allowed(value);return Math.max(index(value),1,...[...doc.querySelectorAll('.pagination a[href]')].map(a=>{try{const v=allowed(new URL(a.getAttribute('href'),u));return v.pathname===u.pathname&&v.searchParams.get('albumId')===u.searchParams.get('albumId')?index(v):1;}catch{return 1;}}));}
- function albums(doc){return [...doc.querySelectorAll('#freebrick2 .brick2')].map(c=>{const a=c.querySelector('a[href*="albumId"]');if(!a)return null;const u=allowed(a.getAttribute('href'));return {id:u.searchParams.get('albumId'),url:page(u,1),name:c.querySelector('.info')?.textContent.trim()||'未命名相簿'};}).filter(Boolean);}
- function photos(doc){return [...doc.querySelectorAll('#freebrick4 a.photo-gallery[href]')].map(a=>({url:allowed(a.getAttribute('href'),true).href,name:a.getAttribute('title')||'照片'}));}
+ function albums(doc,base){return [...doc.querySelectorAll('#freebrick2 .brick2')].map(c=>{const a=c.querySelector('a[href*="albumId"]');if(!a)return null;const u=allowed(a.getAttribute('href'),false,base);return {id:u.searchParams.get('albumId'),url:page(u,1),name:c.querySelector('.info')?.textContent.trim()||'未命名相簿'};}).filter(Boolean);}
+ function photos(doc,base){return [...doc.querySelectorAll('#freebrick4 a.photo-gallery[href]')].map(a=>({url:allowed(a.getAttribute('href'),true,base).href,name:a.getAttribute('title')||'照片'}));}
  const reserved=/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
  function fullDate(match,prefix,year,month,day,roc=false){
   const y=Number(year)+(roc?1911:0),m=Number(month),d=Number(day),date=new Date(Date.UTC(y,m-1,d)),rocYear=y-1911;

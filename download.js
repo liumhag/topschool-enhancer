@@ -116,7 +116,7 @@ async function remotePhotoCount(album,signal){
   const url=TS.page(album.url,page),doc=await TS.doc(url,signal);
   if(!doc.querySelector('#freebrick4'))throw Error('找不到照片內容');
   last=Math.max(last,TS.max(doc,url));if(last>2000)throw Error('分頁數異常');
-  for(const photo of TS.photos(doc))seen.add(photo.url);
+  for(const photo of TS.photos(doc,url))seen.add(photo.url);
  }
  return seen.size;
 }
@@ -163,7 +163,7 @@ async function scanAlbumList(signal){
    const url=TS.page(source,page),doc=await TS.doc(url,signal);
    if(!doc.querySelector('#freebrick2'))throw Error('找不到相簿列表');
    last=Math.max(last,TS.max(doc,url));if(last>2000)throw Error('分頁數異常');
-   for(const album of TS.albums(doc))if(!seen.has(album.id)){seen.add(album.id);albums.push(album);}
+   for(const album of TS.albums(doc,url))if(!seen.has(album.id)){seen.add(album.id);albums.push(album);}
   }
 }
 async function scan(){
@@ -224,7 +224,7 @@ $('start').onclick=async()=>{
     const url=TS.page(album.url,page),doc=await TS.doc(url,signal);
     if(!doc.querySelector('#freebrick4'))throw Error('找不到照片內容');
     last=Math.max(last,TS.max(doc,url));if(last>2000)throw Error('分頁數異常');
-    for(const photo of TS.photos(doc))if(!seen.has(photo.url)){seen.add(photo.url);photos.push(photo);}
+    for(const photo of TS.photos(doc,url))if(!seen.has(photo.url)){seen.add(photo.url);photos.push(photo);}
    }
    if(!photos.length)throw Error('相簿沒有照片');
    const entries=[];let size=0;

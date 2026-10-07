@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="280" viewBox="0 0 440 280">
+  <rect width="440" height="280" rx="24" fill="#eaf5f4"/>
+  <rect x="34" y="42" width="196" height="196" rx="38" fill="#166a79"/>
+  <rect x="66" y="76" width="132" height="90" rx="14" fill="#fff"/>
+  <circle cx="160" cy="104" r="14" fill="#f5b642"/>
+  <path d="M79 150 111 116l24 24 18-16 31 26Z" fill="#79c9bd"/>
+  <path d="M132 144v53m-22-21 22 23 22-23" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="258" y="105" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#163c45">TopSchool</text>
+  <text x="258" y="142" font-family="Arial,sans-serif" font-size="25" font-weight="700" fill="#166a79">Album Enhancer</text>
+  <text x="258" y="180" font-family="Arial,sans-serif" font-size="15" fill="#526a73">Browse continuously</text>
+  <text x="258" y="204" font-family="Arial,sans-serif" font-size="15" fill="#526a73">Back up locally</text>
+</svg>

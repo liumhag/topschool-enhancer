@@ -1,4 +1,11 @@
 # Changelog
+## 20261007.0.3.0 — 2026-10-07
+- Extend album browsing and downloading from one school host to supported album paths on all TopSchool subdomains.
+- Keep original-photo access limited to the verified image CDN.
+- Add extension icons for Chrome and Chrome Web Store distribution.
+- Add Traditional Chinese store listing, privacy form, privacy policy and review instruction drafts.
+- Add required Chrome Web Store screenshot and small promotional image assets.
+
 ## 20261007.0.2.10 — 2026-10-07
 - Rename the quick-scan action to `掃描網頁相簿列表` to clarify that it scans the website rather than the local folder.
 
