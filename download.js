@@ -159,7 +159,7 @@ function render(){
 async function scanAlbumList(signal){
  albums=[];const seen=new Set();let last=1;
   for(let page=1;page<=last;page++){
-   status(`掃描相簿列表 ${page} / ${last}`);
+   status(`掃描網頁相簿列表 ${page} / ${last}`);
    const url=TS.page(source,page),doc=await TS.doc(url,signal);
    if(!doc.querySelector('#freebrick2'))throw Error('找不到相簿列表');
    last=Math.max(last,TS.max(doc,url));if(last>2000)throw Error('分頁數異常');
@@ -259,5 +259,5 @@ $('start').onclick=async()=>{
    albums=[{id:url.searchParams.get('albumId'),url:TS.page(source,1),name:doc.querySelector('h2')?.textContent.replace(/^相簿名稱\s*[:：]\s*/,'').trim()||'相簿'}];
    render();status(history[albumKey(albums[0])]?.verified?'目前下載紀錄顯示此相簿已完成；需要核對實際 ZIP 時，請按「完整掃描比對」。':'目前相簿已就緒，請確認下載資料夾。');
   }catch(error){status(error.message);}
- }else status('請按「掃描相簿列表」；此快速掃描會直接使用已保存的下載紀錄。');
+ }else status('請按「掃描網頁相簿列表」；此快速掃描會直接使用已保存的下載紀錄。');
 })();

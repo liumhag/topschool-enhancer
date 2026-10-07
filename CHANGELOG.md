@@ -1,4 +1,7 @@
 # Changelog
+## 20261007.0.2.10 — 2026-10-07
+- Rename the quick-scan action to `掃描網頁相簿列表` to clarify that it scans the website rather than the local folder.
+
 ## 20261007.0.2.9 — 2026-10-07
 - Use saved album IDs to restore downloaded status during the normal album-list scan.
 - Remove folder authorization, ZIP inspection and per-album photo counting from the normal scan.
