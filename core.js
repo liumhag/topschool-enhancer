@@ -8,15 +8,19 @@ globalThis.TS = (() => {
  function photos(doc){return [...doc.querySelectorAll('#freebrick4 a.photo-gallery[href]')].map(a=>({url:allowed(a.getAttribute('href'),true).href,name:a.getAttribute('title')||'照片'}));}
  const reserved=/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
  function fullDate(match,prefix,year,month,day,roc=false){
-  const y=Number(year)+(roc?1911:0),m=Number(month),d=Number(day),date=new Date(Date.UTC(y,m-1,d));
-  return date.getUTCFullYear()===y&&date.getUTCMonth()===m-1&&date.getUTCDate()===d?`${prefix}${y}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}`:match;
+  const y=Number(year)+(roc?1911:0),m=Number(month),d=Number(day),date=new Date(Date.UTC(y,m-1,d)),rocYear=y-1911;
+  return rocYear>0&&date.getUTCFullYear()===y&&date.getUTCMonth()===m-1&&date.getUTCDate()===d?`${prefix}${String(rocYear).padStart(3,'0')}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}`:match;
  }
+ function yearMonth(match,prefix,year,month,roc=false){const y=Number(year)+(roc?1911:0),m=Number(month),rocYear=y-1911;return rocYear>0&&m>=1&&m<=12?`${prefix}${String(rocYear).padStart(3,'0')}${String(m).padStart(2,'0')}`:match;}
  function dates(value){
   return value
    .replace(/(^|[^\d])(\d{4})[.\/年-](\d{1,2})[.\/月-](\d{1,2})日?(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4]))
    .replace(/(^|[^\d])(\d{3})[.\/年-](\d{1,2})[.\/月-](\d{1,2})日?(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4],true))
    .replace(/(^|[^\d])(\d{3})\.(\d{2})(\d{2})(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4],true))
-   .replace(/(^|[^\d])(\d{4})[.\/年-](\d{1,2})月?(?=$|[^\d])/g,(match,prefix,year,month)=>Number(month)>=1&&Number(month)<=12?`${prefix}${year}${String(Number(month)).padStart(2,'0')}`:match)
+   .replace(/(^|[^\d])(\d{4})(\d{2})(\d{2})(?=$|[^\d])/g,(...args)=>fullDate(args[0],args[1],args[2],args[3],args[4]))
+   .replace(/(^|[^\d])(\d{4})[.\/年-](\d{1,2})月?(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3]))
+   .replace(/(^|[^\d])(\d{3})[.\/年-](\d{1,2})月?(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3],true))
+   .replace(/(^|[^\d])(\d{4})(\d{2})(?=$|[^\d])/g,(...args)=>yearMonth(args[0],args[1],args[2],args[3]))
    .replace(/(\d)\.(?=\d)/g,'$1');
  }
  function name(value){

@@ -1,4 +1,10 @@
 # Changelog
+## 20261007.0.2.6 — 2026-10-07
+- Convert Gregorian dates in generated filenames to ROC calendar dates.
+- Keep existing ROC calendar dates and normalize their month and day digits.
+- Match manually renamed ZIP files such as `1150317世界水資源日.zip` with `115.0317世界水資源日`.
+- Convert compact Gregorian dates created by earlier versions when comparing ZIP filenames.
+
 ## 20261007.0.2.5 — 2026-10-07
 - Remove the manual full path display field.
 - Show the selected folder name and its current Chrome permission status.

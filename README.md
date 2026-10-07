@@ -1,4 +1,4 @@
-# TopSchool Album Enhancer v20261007.0.2.5
+# TopSchool Album Enhancer v20261007.0.2.6
 
 維妮爾國際幼兒園 TopSchool 相簿用 Chrome 外掛。Windows / Mac 桌面 Chrome 適用，不需上架、不需 npm 安裝。
 
@@ -13,7 +13,7 @@
 - 顯示 Chrome 提供的資料夾名稱及目前授權狀態；不要求使用者手動輸入路徑。
 - 下載器右上角顯示對外版本號，方便確認目前載入版本。
 - 相簿名稱與照片名稱會使用易讀規則清理：刪除 `~`、將 `、` 改成 `-`，其他 Windows 不合法分隔符改成 `-` 或移除，並處理 Windows 保留名稱。
-- 完整日期統一為 `yyyymmdd` 並補零，例如 `2026.8.8` → `20260808`；民國日期會轉西元，例如 `115.3.17` 或 `115.0317` → `20260317`。只有年月時保留 `yyyymm`，不虛構日期。
+- 日期統一使用民國年並補零，例如 `2026.8.8` → `1150808`，`115.3.17` 或 `115.0317` → `1150317`。只有年月時保留民國年月，例如 `2025.12` → `11412`，不虛構日期。
 - 以目前資料夾內實際存在的 ZIP 判斷是否已下載；索引檔 `topschool-album-downloads.json` 保存相簿 ID、ZIP 檔名、照片數量與時間。
 - 外掛更新、重裝或本機紀錄清除後，重新選擇原資料夾仍可由索引及 ZIP 恢復已下載狀態。
 - 判斷已下載時會讀取 ZIP 內檔案數，並掃描網站相簿的實際照片數；只有兩者一致才標示「已下載」，不一致會顯示「不完整」並保持勾選。
@@ -54,7 +54,7 @@ Chrome 基於隱私只提供授權資料夾的控制代碼與名稱，不提供�
 最容易的方法是安裝官方 GitHub Desktop，在 GitHub 帳號登入後：
 1. File → New repository，名稱 topschool-album-enhancer，放在固定專案路徑。
 2. 把本包資料夾內的程式檔复制到新 repository，確認根目錄直接有 manifest.json。
-3. Commit to main，訊息 `Update TopSchool Album Enhancer v20261007.0.2.5`。
+3. Commit to main，訊息 `Update TopSchool Album Enhancer v20261007.0.2.6`。
 4. Publish repository；取消「Keep this code private」會公開，所以務必保持勾選。
 5. Windows Chrome 載入這個 repository 資料夾作為外掛。
 6. 家中 Mac 用 GitHub Desktop → Clone repository，選這個 private repo；Chrome 載入 Mac clone 的資料夾。
