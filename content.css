@@ -1,4 +1,5 @@
 #freebrick2.ts-grid,#freebrick4.ts-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));height:auto!important;gap:10px;position:relative!important}
+.pagination{display:none!important}
 .ts-grid>.brick2,.ts-grid>.brick4{position:static!important;top:auto!important;left:auto!important;width:auto!important;height:auto!important;opacity:1!important;transform:none!important;transition:none!important}
 .ts-grid .albumbgphoto{display:block;height:160px;background-size:cover;background-position:center}
 .ts-status{padding:16px;text-align:center;color:#315269}

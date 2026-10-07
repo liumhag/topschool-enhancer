@@ -1,4 +1,10 @@
 # Changelog
+## 20261007.0.2.7 — 2026-10-07
+- Hide the original pagination controls immediately.
+- Redirect later-page album and photo URLs to page 1 while preserving filters and album parameters.
+- Ensure continuous browsing always loads the complete sequence from page 1.
+- Keep pagination hidden when automatic loading fails.
+
 ## 20261007.0.2.6 — 2026-10-07
 - Convert Gregorian dates in generated filenames to ROC calendar dates.
 - Keep existing ROC calendar dates and normalize their month and day digits.

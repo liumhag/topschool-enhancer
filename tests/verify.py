@@ -2,14 +2,19 @@
 import json, pathlib, subprocess, tempfile, zipfile
 root = pathlib.Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
-assert manifest['version'] == '0.2.6'
-assert manifest['version_name'] == '20261007.0.2.6'
+assert manifest['version'] == '0.2.7'
+assert manifest['version_name'] == '20261007.0.2.7'
 assert manifest['permissions'] == ['storage']
 download_html = (root / 'download.html').read_text(encoding='utf-8')
 download_js = (root / 'download.js').read_text(encoding='utf-8')
+content_js = (root / 'content.js').read_text(encoding='utf-8')
+content_css = (root / 'content.css').read_text(encoding='utf-8')
 assert all(f'id="{item}"' in download_html for item in ('choose-directory', 'directory-name', 'refresh-directory', 'version'))
 assert 'id="path-label"' not in download_html
 assert "const INDEX_FILE='topschool-album-downloads.json'" in download_js
+assert 'location.replace(TS.page(source,1))' in content_js
+assert "document.querySelectorAll('.pagination').forEach(x=>x.remove())" in content_js
+assert '.pagination{display:none!important}' in content_css
 with tempfile.TemporaryDirectory() as temp:
     target = pathlib.Path(temp) / 'test.zip'
     script = '''
